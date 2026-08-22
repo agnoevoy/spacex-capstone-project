@@ -47,7 +47,13 @@ app.layout = html.Div(children=[html.H1('SpaceX Launch Records Dashboard',
 
                                 html.P("Payload range (Kg):"),
                                 # TASK 3: Add a slider to select payload range
-                                #dcc.RangeSlider(id='payload-slider',...)
+                                dcc.RangeSlider(
+                                    id='payload-slider',
+                                    min = 0,
+                                    max = 10000,
+                                    step = 1000,
+                                    value = [min_payload, max_payload]
+                                    ),
 
                                 # TASK 4: Add a scatter chart to show the correlation between payload and launch success
                                 html.Div(dcc.Graph(id='success-payload-scatter-chart')),
@@ -71,10 +77,46 @@ def get_pie_chart(entered_site):
         )
 
         return fig
+    else:
+        filtered_df = spacex_df[spacex_df['Launch Site'] == entered_site]
+
+        fig  = px.pie(
+                    filtered_df,
+                    names = 'class',
+                    title = f'Launches Success for {entered_site}'
+                )
+        return fig
+
 
 # TASK 4:
 # Add a callback function for `site-dropdown` and `payload-slider` as inputs, `success-payload-scatter-chart` as output
+@app.callback(
+    Output('success-payload-scatter-chart', 'figure'),
+    Input('site-dropdown', 'value'),
+    Input('payload-slider', 'value')
+)
 
+def get_scatter_chart(entered_site, payload_range):
+
+    filtered_df = spacex_df[
+        (spacex_df['Payload Mass (kg)'] >= payload_range[0]) &
+        (spacex_df['Payload Mass (kg)'] <= payload_range[1]) 
+    ]
+
+    if entered_site != 'ALL':
+        filtered_df = filtered_df[
+            filtered_df['Launch Site'] == entered_site
+        ]
+
+    fig = px.scatter(
+        filtered_df,
+        x = 'Payload Mass (kg)',
+        y = 'class',
+        color = 'Booster Version Category',
+        title = f'Payload vs. Landing Success for {entered_site}'
+    )
+
+    return fig
 
 # Run the app
 if __name__ == '__main__':
